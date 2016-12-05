@@ -698,7 +698,7 @@ Most Femtocode snippets are small enough for this to be obvious!
 
 \begin{frame}[fragile]{Semantics}
 \vspace{0.5 cm}
-Assignments are included {\it as a convenience.}
+Assignments are provided {\it as a convenience.}
 
 \begin{center}
 \begin{minipage}{0.9\linewidth}
@@ -712,7 +712,7 @@ goodVertex and goodPt and goodIsolation
 \end{minipage}
 \end{center}
 
-Assigned-expression ASTs are literally inserted where they are referenced \textcolor{gray}{(handling shadowed variable names appropriately, with lexical scope)}.
+Expression ASTs are literally inserted where they are referenced \textcolor{gray}{(handling shadowed variable names appropriately, with lexical scope)}.
 
 \vspace{0.5 cm}
 This is legal because Femtocode has perfect referential transparency. \textcolor{gray}{(All variables are immutable, no side-effects, no exceptions or non-halting functions.)}
@@ -783,7 +783,7 @@ x = x + 1
 
 \begin{frame}[fragile]{Semantics}
 \vspace{0.5 cm}
-Although not logically necessary, we require values and functions to be written from dependencies to dependents.
+Although not logically necessary, we require values and functions to be defined before they are used.
 
 \begin{center}
 \begin{minipage}{0.9\linewidth}
@@ -803,7 +803,7 @@ def momentum(p4): sqrt(p4[1]**2 + p4[2]**2 + p4[3]**2);
 \end{minipage}
 \end{center}
 
-are not allowed. The first of these would likely be a user mistake.
+are not allowed. The first would likely be a user mistake.
 \end{frame}
 
 \begin{frame}{}
