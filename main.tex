@@ -25,6 +25,7 @@
 \usepackage{courier}
 
 \xdefinecolor{darkblue}{rgb}{0.1,0.1,0.7}
+\xdefinecolor{darkorange}{rgb}{0.8,0.5,0}
 \xdefinecolor{dianablue}{rgb}{0.18,0.24,0.31}
 \definecolor{commentgreen}{rgb}{0,0.6,0}
 \definecolor{stringmauve}{rgb}{0.58,0,0.82}
@@ -59,7 +60,7 @@
   morestring=[b]"""
 }
 
-\title[2016-12-16-femtocode-overview]{Femtocode Motivation and Overview}
+\title[2016-12-16-femtocode-overview]{Teraserver and Femtocode Overview}
 \author{Jim Pivarski}
 \institute{Princeton University -- DIANA}
 \date{December 16, 2016}
@@ -79,95 +80,57 @@
 %  \tableofcontents
 %\end{frame}
 
-\section{Introduction}
+\begin{frame}{Essential and accidental complexity}
+\vspace{0.25 cm}
+\textcolor{darkorange}{\bf End-user physics analysis \underline{must} consist of the following:}
+\begin{description}
+\item[big data pull:] probably with on-the-fly filters and transformations, given the scale of the data,
+\item[manipulations:] at least plotting, but probably fitting, cross-comparisons, machine learning, etc.
+\end{description}
 
-\begin{frame}{Introduction}
-
+\vfill
+\textcolor{darkorange}{\bf Currently, most analyses also include:}
+\begin{description}
+\item[private skim:] intermediate-sized dataset with more fields than necessary.
 \begin{itemize}
-  \item Your introduction goes here!
-  \item Use \texttt{itemize} to organize your main points.
+\item Since the big data pull takes so long, fields that {\it might} be needed are included as a hedge.
+\item This makes the big data pull bigger.
 \end{itemize}
+\end{description}
+\end{frame}
 
-\vskip 1cm
+\begin{frame}{Reducing dataset size early}
+\begin{center}
+\only<1>{\includegraphics[width=0.8\linewidth]{pseudoplot.pdf}}
+\only<2>{\includegraphics[width=0.8\linewidth]{pseudoplot2.pdf}}
+\end{center}
 
-\begin{block}{Examples}
-Some examples of commonly used commands and features are included, to help you get started.
-\end{block}
+Ideally, data should go directly from the collaboration-wide store (e.g.\ MiniAOD) into plots, fits, or machine learning algorithms, rapidly enough that there's no pressure to overstock the big data pull.
+\end{frame}
+
+\begin{frame}{Industry {\it expects} interactive analysis}
+
+Business intelligence has traditionally been interactive; there's a race to provide interactivity with Big Data backends:
+
+\begin{center}
+\textcolor{blue}{Ibis, Impala, Kudu, Drill, \ldots}
+\end{center}
+
+all aim to yield sub-second results from terabytes or petabytes.
+
+\vfill
+\textcolor{darkorange}{\bf Shouldn't we?}
+\end{frame}
+
+\begin{frame}{Physics data are different}
+
+
+
+
 
 \end{frame}
 
-\section{Some \LaTeX{} Examples}
 
-\subsection{Tables and Figures}
 
-\begin{frame}{Tables and Figures}
-
-\begin{itemize}
-\item Use \texttt{tabular} for basic tables --- see Table~\ref{tab:widgets}, for example.
-\item You can upload a figure (JPEG, PNG or PDF) using the files menu. 
-\item To include it in your document, use the \texttt{includegraphics} command (see the comment below in the source code).
-\end{itemize}
-
-% Commands to include a figure:
-%\begin{figure}
-%\includegraphics[width=\textwidth]{your-figure's-file-name}
-%\caption{\label{fig:your-figure}Caption goes here.}
-%\end{figure}
-
-\begin{table}
-\centering
-\begin{tabular}{l|r}
-Item & Quantity \\\hline
-Widgets & 42 \\
-Gadgets & 13
-\end{tabular}
-\caption{\label{tab:widgets}An example table.}
-\end{table}
-
-\end{frame}
-
-\subsection{Mathematics}
-
-\begin{frame}{Readable Mathematics}
-
-Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
-$$S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
-      = \frac{1}{n}\sum_{i}^{n} X_i$$
-denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
-
-\end{frame}
-
-\subsection{Code}
-
-\begin{frame}[fragile]{Readable Code}
-
-\vspace{0.5 cm}
-
-Remember to mark the frame as ``fragile'' for verbatim.
-
-\begin{lstlisting}[language=c, frame=single]
-auto output = std::vector<Result>();
-for (i = 0;  i < nEvents;  i++) {   // C++ code!
-    event = events(i);
-    if (condition(event))
-        continue;
-    output.push_back(calculation(event));
-}
-\end{lstlisting}
-
-\begin{lstlisting}[language=python, frame=single]
-output = []                         # Python code!
-for event in events:
-    if condition(event):
-        continue
-    output.append(calculation(event))
-\end{lstlisting}
-
-\begin{lstlisting}[language=scala, frame=single]
-val output: Seq[Result] =           // Scala code!
-  events.filter(condition).map(calculation)
-\end{lstlisting}
-
-\end{frame}
 
 \end{document}
