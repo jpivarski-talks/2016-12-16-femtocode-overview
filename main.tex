@@ -228,7 +228,9 @@ To replace GRID jobs with declarative queries, the query \mbox{language} must be
 \end{itemize}
 
 \vspace{0.5 cm}
-Nothing exists to fill this gap. \textcolor{gray}{(For most of this year, I've been looking for something like it.)}
+Nothing exists to fill this gap.
+
+\textcolor{gray}{(For most of this year, I've been looking.)}
 
 \vspace{0.5 cm}
 Need to invent a query language: \textcolor{darkblue}{Femtocode}.
@@ -320,7 +322,7 @@ event.tracks
 \item[Declarative:]<1-> order written/order evaluated need not be the same.
 \item[Functional:]<2-> map/filter/maxBy instead of explicit for loops.
 \item[Vectorizable:]<3-> code appears to act on rows (e.g.\ events), but automatically translated to operate on columns.
-\item[No unbounded loops:]<4-> processing time strictly scales with input data size; not Turing complete.
+\item[No unbounded loops:]<4-> execution time strictly scales with input data size; not Turing complete.
 \item[No runtime errors:]<5-> any compilable query will return some result.
 \item[Statically typed:]<6-> stronger type system than most languages is needed to eliminate runtime errors.
 \item[Full type inference:]<7-> explicitly writing down types is annoying.
@@ -433,7 +435,7 @@ The type system has to know enough to eliminate the possibility of runtime error
 If {\tt x} and {\tt y} are {\tt real}, then ``{\tt x/y}'' is a type error but
 
 \vspace{0.2 cm}
-\mbox{ } \hfill ``{\tt if (y != 0 \{x/y\} else \{None\}}'' \hfill \mbox{ }
+\mbox{ } \hfill ``{\tt if y != 0:\ x/y else:\ None}'' \hfill \mbox{ }
 
 \vspace{0.2 cm}
 is legal. The error message directs the user to fix their code.
@@ -447,7 +449,7 @@ is legal. The error message directs the user to fix their code.
 If {\tt x} and {\tt y} are {\tt real},
 
 \vspace{0.2 cm}
-\mbox{ } \hfill ``{\tt if y != 0 \{x/y\} else \{None\}}'' \hfill \mbox{ }
+\mbox{ } \hfill ``{\tt if y != 0:\ x/y else:\ None}'' \hfill \mbox{ }
 
 \vspace{0.2 cm}
 illustrates the flow of type inference.
@@ -648,11 +650,11 @@ string"""}
 
 \ \ \ else:
 
-\ doIfFalse()
+\ doIfFalse()}
 
-if something \{doIfTrue()\} else \{doIfFalse()\}}
+\item curly-bracketed blocks with semicolon-separated assignments ending in a single expression.
 
-\item curly-bracketed blocks are semicolon-separated assignments ending in a single expression.
+{\small\tt if something \{doIfTrue()\} else \{doIfFalse()\}}
 \end{itemize}
 \end{columns}
 \end{frame}
