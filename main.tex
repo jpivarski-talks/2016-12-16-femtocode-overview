@@ -23,6 +23,7 @@
 \usepackage{tikz}
 \usepackage{listings}
 \usepackage{courier}
+\usepackage{minted}
 
 \xdefinecolor{darkblue}{rgb}{0.1,0.1,0.7}
 \xdefinecolor{darkorange}{rgb}{0.8,0.5,0}
@@ -60,7 +61,7 @@
   morestring=[b]"""
 }
 
-\title[2016-12-16-femtocode-overview]{Teraserver and Femtocode Overview}
+\title[2016-12-16-femtocode-overview]{Femtocode Overview}
 \author{Jim Pivarski}
 \institute{Princeton University -- DIANA}
 \date{December 16, 2016}
@@ -82,21 +83,25 @@
 
 \begin{frame}{Essential and accidental complexity}
 \vspace{0.25 cm}
-\textcolor{darkorange}{\bf End-user physics analysis \underline{must} consist of the following:}
+\textcolor{darkorange}{\bf End-user physics analysis \underline{must} include the following:}
 \begin{description}
-\item[big data pull:] probably with on-the-fly filters and transformations, given the scale of the data,
-\item[manipulations:] at least plotting, but probably fitting, cross-comparisons, machine learning, etc.
+\item[\bf big data pull:] probably with on-the-fly filters and transformations, given the scale of the data,
+\item[\bf manipulations:] at least plotting, but probably fitting, unfolding, cross-comparisons, machine learning, etc.
 \end{description}
 
 \vfill
+\begin{uncoverenv}<2->
 \textcolor{darkorange}{\bf Currently, most analyses also include:}
 \begin{description}
-\item[private skim:] intermediate-sized dataset with more fields than necessary.
+\item[\bf private skim:] intermediate-sized dataset with more fields than necessary.
 \begin{itemize}
 \item Since the big data pull takes so long, fields that {\it might} be needed are included as a hedge.
 \item This makes the big data pull bigger.
+
+\textcolor{gray}{(The more skim you have, the more you need!)}
 \end{itemize}
 \end{description}
+\end{uncoverenv}
 \end{frame}
 
 \begin{frame}{Reducing dataset size early}
@@ -105,7 +110,7 @@
 \only<2>{\includegraphics[width=0.8\linewidth]{pseudoplot2.pdf}}
 \end{center}
 
-Ideally, data should go directly from the collaboration-wide store (e.g.\ MiniAOD) into plots, fits, or machine learning algorithms, rapidly enough that there's no pressure to overstock the big data pull.
+Ideally, data should go directly from the collaboration-wide store (e.g.\ MiniAOD) into plots, fits, or machine learning algorithms, rapidly enough that there's no temptation to overstock the big data pull.
 \end{frame}
 
 \begin{frame}{Industry {\it expects} interactive analysis}
@@ -116,19 +121,100 @@ Business intelligence has traditionally been interactive; there's a race to prov
 \textcolor{blue}{Ibis, Impala, Kudu, Drill, \ldots}
 \end{center}
 
-all aim to yield sub-second results from terabytes or petabytes.
+all aim to yield sub-second results from terabytes or petabytes of data.
 
 \vfill
 \textcolor{darkorange}{\bf Shouldn't we?}
 \end{frame}
 
-\begin{frame}{Physics data are different}
+\begin{frame}{How could this even be possible?}
+\vspace{0.5 cm}
+\textcolor{darkorange}{\bf How could a week-long GRID job be reduced to seconds?}
 
+\vspace{0.5 cm}
+\begin{columns}[t]
+\column{0.5\linewidth}
+\textcolor{darkblue}{\underline{\bf GRID job}}
 
+\begin{itemize}
+\item Includes data fields that {\it might} be useful.
 
+\item Framework reconstructs whole C++ objects, regardless of whether they're split in ROOT: loading {\it dozens} of unused fields.
 
+\item Bad choices in user's C++.
 
+\item Finding storage for and moving the big output files.
+\end{itemize}
+
+\column{0.5\linewidth}
+\textcolor{darkblue}{\underline{\bf Interactive query}}
+
+\begin{itemize}
+\item Limited to fields mentioned in the query.
+
+\item Only loads the attributes mentioned in the query: rarely more than 5--10.
+
+\item Can employ JIT or other optimizations.
+
+\item Can cache frequently requested fields or subexpressions among users.
+\end{itemize}
+\end{columns}
+
+\vspace{0.5 cm}
+\textcolor{gray}{(Not to mention {\it user's time} needed to write and test the code.)}
 \end{frame}
+
+\begin{frame}{}
+\begin{center}
+\textcolor{darkblue}{\huge But\ldots}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Physics data are different}
+\vspace{0.5 cm}
+Most datasets in industry are (the equivalent of) flat ntuples:
+\begin{itemize}
+\item SQL tables
+\item OLAP hypercubes
+\item exceptions are often handled with user-defined functions
+(e.g.\ lat, lon $\to$ zip code, followed by ntuple analysis on zip codes).
+\end{itemize}
+
+\vfill
+\begin{uncoverenv}<2->
+Modern SQL engines are capable of nested structure, but have no functions for dealing with the structure other than exploding it.
+
+\vspace{0.25 cm}
+\textcolor{darkblue}{Physics equivalent:} doing all analysis with TTreeFormula:
+
+\begin{lstlisting}[language=c]
+ntuple->Draw("tracks[].hits[].residual >> hresid");
+\end{lstlisting}
+\end{uncoverenv}
+\end{frame}
+
+\begin{frame}{Physics data are different}
+\vspace{0.25 cm}
+{\bf Spark has two options:}
+\begin{enumerate}
+\item SQL-style (flat) analysis with DataFrames,
+\item General analysis with RDDs.
+\end{enumerate}
+When I asked Michael Armbridge (Databricks) about this, he said the goal of DataFrames was to cover ``95\% of the use-cases.''
+
+\vfill
+Physics analysis with flat ntuples is within their ``95\%,'' but something like this isn't:
+\begin{center}
+\begin{minipage}{0.9\linewidth}
+\textcolor{darkblue}{``Momentum of the track with the most hits with $|\eta|$ $<$ 2.4.''}
+\end{minipage}
+\end{center}
+
+\vfill
+Restricting to flat ntuple analysis would require more private skims,
+less interactive analysis!
+\end{frame}
+
 
 
 
