@@ -431,17 +431,156 @@ The type system has to know enough to eliminate the possibility of runtime error
 If {\tt x} and {\tt y} are {\tt real}, then ``{\tt x/y}'' is a type error but
 
 \vspace{0.2 cm}
-\mbox{ } \hfill ``{\tt if (y != 0.0) \{x/y\} else \{null\}}'' \hfill \mbox{ }
+\mbox{ } \hfill ``{\tt if (y != 0.0) \{x/y\} else \{None\}}'' \hfill \mbox{ }
 
 \vspace{0.2 cm}
 is legal. The error message directs the user to fix their code.
 \end{uncoverenv}
 \end{frame}
 
+\begin{frame}{Type inference}
+\vspace{0.3 cm}
+\textcolor{darkorange}{\bf Same example}
 
+If {\tt x} and {\tt y} are {\tt real},
 
+\vspace{0.2 cm}
+\mbox{ } \hfill ``{\tt if (y != 0.0) \{x/y\} else \{None\}}'' \hfill \mbox{ }
 
+\vspace{0.2 cm}
+illustrates the flow of type inference.
 
+\vspace{0.5 cm}
+\begin{uncoverenv}<2->
+``if'' predicates, as well as ``and'' and ``or'' conjunctions, constrict the data type of a variable, in this case from {\tt real} to
+
+\mbox{\tt union(real(max=almost(0)), real(min=almost(0)))}.
+\end{uncoverenv}
+
+\begin{uncoverenv}<3->
+Inside the {\tt else} clause, {\tt y} can have only one value: {\tt real(0, 0)}.
+\end{uncoverenv}
+
+\begin{uncoverenv}<4->
+The resulting type of the whole expression is {\tt union(null, extended)}. This would raise a type error if the user tried to insert it into a function that doesn't accept {\tt None}, or {\tt inf} (e.g.\ {\tt sin} and {\tt cos}), or negative values (e.g.\ {\tt sqrt}).
+\end{uncoverenv}
+\end{frame}
+
+\begin{frame}{Logical inference}
+\vspace{0.25 cm}
+Perhaps this looks like a formal proof system or a computer algebra system. In a way, every type-checker is (Curry-Howard correspondence).
+
+\vspace{0.25 cm}
+\begin{uncoverenv}<2->
+\textcolor{darkblue}{Femtocode has just enough type system granularity to eliminate runtime errors:}
+\begin{itemize}
+\item unions of intervals of numbers,
+\item string and collection size bounds (avoid index overflows),
+\item interval propagation through {\tt +}, {\tt -}, {\tt *}, {\tt /}, {\tt //}, {\tt **}, {\tt \%}, and numerical functions (e.g.\ {\tt sin}, {\tt cos}, {\tt sqrt}),
+\item no attempt to track correlations, like {\tt x - y} having a smaller interval than {\tt x} and {\tt y} separately,
+\item structural record types (records are the same if they have the same fields),
+\item user-defined functions are taken to be parametric in all parameters (so that logical inference always flows in one direction).
+\end{itemize}
+\end{uncoverenv}
+\end{frame}
+
+\begin{frame}[fragile]{Syntax}
+\vspace{0.25 cm}
+\textcolor{darkblue}{BNF specification of Femtocode syntax} \only<2->{\textcolor{red}{that is identical to Python}}
+
+\vspace{-0.5 cm}
+\begin{columns}[t]
+\column{0.5\linewidth}
+\tiny
+\begin{verbatim}
+body: ';'* suite
+suite: (assignment ';'*)* expression ';'*
+lvalues: (NAME ',')* NAME [',']
+assignment: (lvalues '=' closed_expression
+              | fcnndef)
+fcnndef: ('def' NAME '(' [paramlist] ')'
+            closed_exprsuite)
+expression: ifblock | fcndef | or_test
+closed_expression: (closed_ifblock | fcndef
+                     | or_test ';')
+fcndef: '{' [paramlist] '=>' ';'* suite '}'
+fcn1def: parameter '=>' expression
+paramlist: (parameter ',')* (parameter [','])
+parameter: NAME ['=' expression]
+exprsuite: (':' expression
+             | [':'] '{' ';'* suite '}')
+closed_exprsuite: (':' closed_expression
+             | [':'] '{' ';'* suite '}')
+ifblock: ('if' expression exprsuite
+            ('elif' expression exprsuite)*
+             'else' exprsuite)
+closed_ifblock: ('if' expression exprsuite
+            ('elif' expression exprsuite)*
+             'else' closed_exprsuite)
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{red}}
+\begin{verbatim}
+or_test: and_test ('or' and_test)*
+and_test: not_test ('and' not_test)*
+not_test: 'not' not_test | comparison
+comparison: typecheck (comp_op typecheck)*
+comp_op: ('<' | '>' | '==' | '>=' | '<='
+              | '!=' | 'in' | 'not' 'in')
+\end{verbatim}
+
+\column{0.5\linewidth}
+\tiny\only<2->{\color{black}}
+\begin{verbatim}
+typecheck: (arith_expr ['is' arith_expr
+             | 'is' 'not' arith_expr])
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{red}}
+\begin{verbatim}
+arith_expr: term (('+' | '-') term)*
+term: factor (('*' | '/' | '%' | '//') factor)*
+factor: ('+' | '-') factor | power
+power: atom trailer* ['**' factor]
+atom: ('(' expression ')'
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{black}}
+\begin{verbatim}
+        | ('[' (expression ',')*
+             [expression [',']] ']')
+        | fcndef '(' [arglist] ')'
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{red}}
+\begin{verbatim}
+        | MULTILINESTRING
+        | STRING
+        | IMAG_NUMBER
+        | FLOAT_NUMBER
+        | HEX_NUMBER
+        | OCT_NUMBER
+        | DEC_NUMBER
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{black}}
+\begin{verbatim}
+        | ATARG
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{red}}
+\begin{verbatim}
+        | NAME)
+trailer: ('(' [arglist] ')'
+           | '[' subscriptlist ']' | '.' NAME)
+subscriptlist: subscript (',' subscript)* [',']
+subscript: (expression
+           | [expression] ':' [expression]
+             [sliceop])
+sliceop: ':' [expression]
+\end{verbatim}
+\vspace{-0.8 cm}\only<2->{\color{black}}
+\begin{verbatim}
+arglist: (((argument ',')* (argument [',']))
+           | fcn1def)
+argument: expression | NAME '=' expression
+\end{verbatim}
+\end{columns}
+\end{frame}
 
 
 \end{document}
