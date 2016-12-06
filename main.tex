@@ -991,6 +991,37 @@ Although the execution engine receives a list of operations, each containing a l
 \end{uncoverenv}
 \end{frame}
 
+\begin{frame}{Data representation}
+\vspace{0.5 cm}
+\begin{columns}
+\column{0.6\linewidth}
+For all conceivable backends, data will be stored in columnar arrays, probably uncompressed.
+
+\column{0.4\linewidth}
+\includegraphics[width=\linewidth]{columnar.png}
+\end{columns}
+
+\vspace{0.5 cm}
+I don't think it would make sense to use Parquet's definition and repetition levels:
+\begin{center}
+\textcolor{blue}{\scriptsize\url{https://blog.twitter.com/2013/dremel-made-simple-with-parquet}}
+\end{center}
+since the repetition levels can't be interpreted independently: you need to know the elements' neighbors to know how to interpret them.
+
+\vspace{0.2 cm}
+Also, they take too much memory: every repeated field requires a repetition level array, though the fields of a repeated record would have identical repetition levels.
+\end{frame}
+
+\begin{frame}{Data representation}
+\vspace{0.5 cm}
+Instead, link columns of different levels (e.g.\ event level and particle level) with two short arrays at the outer level: first index and number of elements. These can be shared among all fields of a record in a variable-sized collection.
+
+\vspace{0.25 cm}
+\textcolor{darkblue}{\bf Example:}
+
+\includegraphics[width=\linewidth]{hierarchical_arrays.pdf}
+\end{frame}
+
 \begin{frame}{Status}
 \vspace{0.25 cm}
 \small
@@ -1007,26 +1038,25 @@ Although the execution engine receives a list of operations, each containing a l
 7 & type $\cup$, $\cap$, $\backslash$ & $\surd$ \\
 8 & type inference & $\surd$ \\
 9 & type constraints (``if'', ``and'', ``or'') & $\surd$ \\
-10 & type propagation & $\surd$ \\
+10 & type propagation through operators & $\surd$ \\
 11 & type propagation through other functions & \textcolor{red}{no} \\
 12 & typed AST & $\surd$ \\
 13 & collate identical expressions & $\surd$ \\
-14 & dependencies & $\surd$ \\
 \end{tabular}
 
 \column{0.5\linewidth}
 \begin{tabular}{r >{\raggedright}p{0.6\linewidth} c}
 & step & done? \\\hline
-15 & expressions to statements & \textcolor{red}{no} \\
-16 & generate intermediate representation & \textcolor{red}{no} \\
-17 & simple Numpy implementation & \textcolor{red}{no} \\
-18 & focus group syntax, user interface & \textcolor{red}{no} \\
-19 & discuss with Philippe & \textcolor{red}{no} \\
-20 & start integrating into Terascope & \textcolor{red}{no} \\
-21 & implement example of each level-changing function & \textcolor{red}{no} \\
-22 & GPU development with Peter Hansen & \textcolor{red}{no} \\
-23 & big library of functions & \textcolor{red}{no} \\
-24 & regular development & \textcolor{red}{no} \\
+14 & expressions to statements & \textcolor{red}{no} \\
+15 & generate intermediate representation & \textcolor{red}{no} \\
+16 & simple Numpy implementation & \textcolor{red}{no} \\
+17 & focus group syntax, user interface & \textcolor{red}{no} \\
+18 & discuss with Philippe & \textcolor{red}{no} \\
+19 & start integrating into Terascope & \textcolor{red}{no} \\
+20 & implement example of each level-changing function & \textcolor{red}{no} \\
+21 & GPU development with Peter Hansen & \textcolor{red}{no} \\
+22 & big library of functions & \textcolor{red}{no} \\
+23 & regular development & \textcolor{red}{no} \\
 \end{tabular}
 \end{columns}
 \end{frame}
