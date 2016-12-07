@@ -126,7 +126,7 @@ Business intelligence has traditionally been interactive; there's a race to prov
 \textcolor{blue}{Ibis, Impala, Kudu, Drill, \ldots}
 \end{center}
 
-all aim to yield sub-second results from terabytes or petabytes of data.
+all aim to yield sub-second results from terabytes or petabytes of data. (And Google claims to have it, in-house (\href{http://research.google.com/pubs/pub36632.html}{\textcolor{blue}{paper}}).)
 
 \vfill
 \textcolor{darkorange}{\bf Shouldn't we?}
@@ -167,6 +167,27 @@ all aim to yield sub-second results from terabytes or petabytes of data.
 
 \vspace{0.5 cm}
 \textcolor{gray}{(Not to mention {\it user's time} needed to write and test the code.)}
+\end{frame}
+
+\begin{frame}{How could this even be possible?}
+\vspace{0.5 cm}
+\large \textcolor{darkblue}{\underline{Numbers for sanity check:}}
+\begin{itemize}
+\item 2010--2016 CMS data is about 100~fb$^{-1}$ (\href{http://cms-service-lumi.web.cern.ch/cms-service-lumi/publicplots/int_lumi_cumulative_pp_1.png}{\textcolor{blue}{plot}}),
+\item $t\bar{t}$ is 1000~pb (\href{https://atlas.web.cern.ch/Atlas/GROUPS/PHYSICS/CombinedSummaryPlots/SM/ATLAS_p_SMSummary_SqrtS_Zoom/ATLAS_p_SMSummary_SqrtS_Zoom.png}{\textcolor{blue}{plot}}),
+\item say you want to look at 100 numerical values per event,
+\item 8 bytes per double-precision value,
+\end{itemize}
+that's 80~GB of data to examine, with all overhead eliminated.
+
+\vspace{0.5 cm}
+\uncover<2->{That could take seconds to minutes to analyze on a single computer, depending.}
+
+\vspace{0.2 cm}
+\uncover<3->{3.2 seconds to copy to GPU and 0.16 seconds to analyze on a single computer with a typical (Tesla K20) GPU.}
+
+\vspace{0.2 cm}
+\uncover<4->{This embarrassingly parallel problem can be distributed across a cluster of servers.}
 \end{frame}
 
 \begin{frame}{}
@@ -385,6 +406,89 @@ Many concrete realizations:
 \item \textcolor{darkblue}{Apache Arrow:} target many big data platforms at once.
 \end{itemize}
 \end{uncoverenv}
+\end{frame}
+
+\begin{frame}{What is a dataset?}
+\vspace{0.5 cm}
+\textcolor{darkblue}{\large Alternate definition:}
+
+\vspace{0.2 cm}
+\mbox{ } \hfill \textcolor{darkorange}{\bf A dataset is a mapping from schema leaves to columns.} \hfill \mbox{ }
+
+\vspace{0.5 cm}
+\begin{columns}
+\column{0.5\linewidth}
+Even if the schema has nested structure, it is possible to write each schema leaf (primitive type) as an array of primitives.
+
+\vspace{0.2 cm}
+Some arrays would be longer than others.
+
+\column{0.4\linewidth}
+\vspace{-0.4 cm}
+\includegraphics[width=\linewidth]{columnar.png}
+\end{columns}
+
+\vspace{0.5 cm}
+\begin{center}
+\large \textcolor{darkblue}{Different versions of a dataset can share all but one leaf.}
+
+\vspace{0.4 cm}
+\normalsize Very lightweight updates: correcting an error in jet energy scale doesn't need to affect track parameters (for instance).
+\end{center}
+\end{frame}
+
+\begin{frame}{Updating datasets (e.g.\ in CMS)}
+\small
+\vspace{0.5 cm}
+\textcolor{darkblue}{Central reprocessing, replace all:}
+\vspace{-0.15 cm}
+\begin{enumerate}\setlength{\itemsep}{-0.1 cm}
+\item \small CMS runs CMSSW, produces new data products in ROOT files,
+\item \small data products are converted into columns,
+\item \small new dataset names associated with new columns.
+\end{enumerate}
+
+\textcolor{darkblue}{Central bug-fix, replacing a few values:}
+\vspace{-0.15 cm}
+\begin{enumerate}\setlength{\itemsep}{-0.1 cm}
+\item \small CMS runs CMSSW, produces only the new data products in \mbox{ROOT files,\hspace{-1 cm}}
+\item \small only new data products are converted into columns,
+\item \small new dataset names associated with old and new columns.
+\end{enumerate}
+
+\textcolor{darkblue}{User wants to share derived quantity from CMSSW:}
+\vspace{-0.15 cm}
+\begin{enumerate}\setlength{\itemsep}{-0.1 cm}
+\item \small User runs CMSSW, produces only the new data products in \mbox{ROOT files,\hspace{-1 cm}}
+\item \small only new data products are converted into columns,
+\item \small new dataset names associated with old and new columns.
+\end{enumerate}
+
+\textcolor{darkblue}{User wants to share derived quantity from Femtocode:}
+\vspace{-0.15 cm}
+\begin{enumerate}\setlength{\itemsep}{-0.1 cm}
+\item \small User runs Femtocode, saves and names new column,
+\item \small new dataset name associated with old and new columns.
+\end{enumerate}
+
+\textcolor{darkblue}{Implicit sharing:}
+\vspace{-0.15 cm}
+\begin{enumerate}\setlength{\itemsep}{-0.1 cm}
+\item \small Frequently calculated subexpressions can be implicitly cached.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Cross-references}
+The Femtocode type system (next page) has no ``pointers,'' no way to make a reference within the event.
+
+\vspace{0.2 cm}
+\textcolor{gray}{(For instance, for a muon object to point to its track or a jet object to point to its collection of tracks.)}
+
+\vspace{0.5 cm}
+However, Femtocode also has value-equality: no distinction between copying and referencing. Backend can present ``virtual columns,'' indexes into some other collection, as nested data.
+
+\vspace{0.5 cm}
+\textcolor{gray}{(Thus, the distinction between a muon {\it pointing} to its track and containing a {\it copy} of its track is a backend optimization, not visible to the Femtocode user.)}
 \end{frame}
 
 \begin{frame}{Abstract type system}
