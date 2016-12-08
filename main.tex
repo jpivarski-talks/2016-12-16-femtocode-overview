@@ -175,19 +175,20 @@ all aim to yield sub-second results from terabytes or petabytes of data. (And Go
 \begin{itemize}
 \item 2010--2016 CMS data is about 100~fb$^{-1}$ (\href{http://cms-service-lumi.web.cern.ch/cms-service-lumi/publicplots/int_lumi_cumulative_pp_1.png}{\textcolor{blue}{plot}}),
 \item $t\bar{t}$ is 1000~pb (\href{https://atlas.web.cern.ch/Atlas/GROUPS/PHYSICS/CombinedSummaryPlots/SM/ATLAS_p_SMSummary_SqrtS_Zoom/ATLAS_p_SMSummary_SqrtS_Zoom.png}{\textcolor{blue}{plot}}),
-\item say you want to look at 100 numerical values per event,
+\item say you want to look at {\it 100 numerical values per event,}
 \item 8 bytes per double-precision value,
 \end{itemize}
 that's 80~GB of data to examine, with all overhead eliminated.
 
-\vspace{0.5 cm}
-\uncover<2->{That could take seconds to minutes to analyze on a single computer, depending.}
-
-\vspace{0.2 cm}
-\uncover<3->{3.2 seconds to copy to GPU and 0.16 seconds to analyze on a single computer with a typical (Tesla K20) GPU.}
-
-\vspace{0.2 cm}
-\uncover<4->{This embarrassingly parallel problem can be distributed across a cluster of servers.}
+\vspace{0.4 cm}
+\begin{uncoverenv}<2->
+\textcolor{darkblue}{On a {\it single} computer, {\it single} thread, this is}
+\begin{description}
+\item[disk load:] 21 minutes to read from Numpy; 22 minutes to read from a ROOT file \textcolor{gray}{(in ``MakeClass mode'')},
+\item[CPU execution:] 70 seconds to apply a simple operation \mbox{\textcolor{gray}{(sequential ``for'' loop, AWS ``t2.medium'' 2.4 GHz)},\hspace{-1 cm}}
+\item[GPU execution:] 12.8 seconds to copy over and 5.1 seconds to perform the same operation \mbox{\textcolor{gray}{(GeForce GTX 660M)}.\hspace{-1 cm}}
+\end{description}
+\end{uncoverenv}
 \end{frame}
 
 \begin{frame}{}
