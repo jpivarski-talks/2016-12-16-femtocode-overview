@@ -1099,7 +1099,7 @@ Although the execution engine receives a list of operations, each containing a l
 \begin{frame}{Data representation}
 \vspace{0.5 cm}
 \begin{columns}
-\column{0.6\linewidth}
+\column{0.5\linewidth}
 For all conceivable backends, data will be stored in columnar arrays, probably uncompressed.
 
 \column{0.4\linewidth}
@@ -1107,24 +1107,13 @@ For all conceivable backends, data will be stored in columnar arrays, probably u
 \end{columns}
 
 \vspace{0.5 cm}
-I don't think it would make sense to use Parquet's definition and repetition levels:
+I've gone back and forth on this, but now I see that Parquet's definition and repetition levels is the most elegant solution:
 \begin{center}
 \textcolor{blue}{\scriptsize\url{https://blog.twitter.com/2013/dremel-made-simple-with-parquet}}
 \end{center}
-since the repetition levels can't be interpreted independently: you need to know the elements' neighbors to know how to interpret them.
 
-\vspace{0.2 cm}
-Also, they take too much memory: every repeated field requires a repetition level array, though the fields of a repeated record would have identical repetition levels.
-\end{frame}
-
-\begin{frame}{Data representation}
 \vspace{0.5 cm}
-Instead, link columns of different levels (e.g.\ event level and particle level) with two short arrays at the outer level: first index and number of elements. These can be shared among all fields of a record in a variable-sized collection.
-
-\vspace{0.25 cm}
-\textcolor{darkblue}{\bf Example:}
-
-\includegraphics[width=\linewidth]{hierarchical_arrays.pdf}
+Each group of columns with the same multiplicity would have one ``repetition level'' array that indicates where collections and subcollections start and end. Only one repetition level array is needed for arbitrarily deep nesting: deeper repetition levels lead to higher integer values in the repetition level array. In principle, subcollections-within-collections could be as deep as $2^{64}$.
 \end{frame}
 
 \begin{frame}{Status}
