@@ -185,7 +185,7 @@ that's 80~GB of data to examine, with all overhead eliminated.
 \textcolor{darkblue}{On a {\it single} computer, {\it single} thread, this is}
 \begin{description}
 \item[disk load:] 21 minutes to read from Numpy; 22 minutes to read from a ROOT file \textcolor{gray}{(in ``MakeClass mode'')},
-\item[CPU execution:] 70 seconds to apply a simple operation \mbox{\textcolor{gray}{(sequential ``for'' loop, AWS ``t2.medium'' 2.4 GHz)},\hspace{-1 cm}}
+\item[CPU execution:] 13 seconds to apply a simple operation \mbox{\textcolor{gray}{(``for'' loop with {\tt -O3}, AWS ``t2.medium'' 2.4 GHz)},\hspace{-1 cm}}
 \item[GPU execution:] 12.8 seconds to copy over and 5.1 seconds to perform the same operation \mbox{\textcolor{gray}{(GeForce GTX 660M)}.\hspace{-1 cm}}
 \end{description}
 \end{uncoverenv}
