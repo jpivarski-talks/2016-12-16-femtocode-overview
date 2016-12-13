@@ -170,26 +170,30 @@ all aim to yield sub-second results from terabytes or petabytes of data. (And Go
 \end{frame}
 
 \begin{frame}{How could this even be possible?}
-\vspace{0.5 cm}
-\large \textcolor{darkblue}{\underline{Numbers for sanity check:}}
+\vspace{0.3 cm}
+\textcolor{darkorange}{\bf Suppose we want to plot all CMS $t\bar{t}$ data ever collected.}
 \begin{itemize}
-\item 2010--2016 CMS data is about 100~fb$^{-1}$ (\href{http://cms-service-lumi.web.cern.ch/cms-service-lumi/publicplots/int_lumi_cumulative_pp_1.png}{\textcolor{blue}{plot}}),
-\item $t\bar{t}$ is 1000~pb (\href{https://atlas.web.cern.ch/Atlas/GROUPS/PHYSICS/CombinedSummaryPlots/SM/ATLAS_p_SMSummary_SqrtS_Zoom/ATLAS_p_SMSummary_SqrtS_Zoom.png}{\textcolor{blue}{plot}}),
-\item say you want to look at {\it 100 numerical values per event,}
-\item 8 bytes per double-precision value,
+\item About 100~fb$^{-1}$ (\href{http://cms-service-lumi.web.cern.ch/cms-service-lumi/publicplots/int_lumi_cumulative_pp_1.png}{\textcolor{blue}{plot}}) $\times$ 1~nb (\href{https://atlas.web.cern.ch/Atlas/GROUPS/PHYSICS/CombinedSummaryPlots/SM/ATLAS_p_SMSummary_SqrtS_Zoom/ATLAS_p_SMSummary_SqrtS_Zoom.png}{\textcolor{blue}{plot}}) is 100 million events.
+\item Derivation of a plotted quantity could involve $\mathcal{O}(100)$ double-precision values per event.
+\item That's only 80~GB of data that needs to be evaluated; anything else is overhead.
 \end{itemize}
-that's 80~GB of data to examine, with all overhead eliminated.
 
-\vspace{0.4 cm}
+\vspace{0.25 cm}
 \begin{uncoverenv}<2->
-\textcolor{darkblue}{On a {\it single} computer, {\it single} thread, this is}
+\textcolor{darkblue}{{\it\large \underline{Single}} computer, {\it \underline{single}} thread, treat all data as an array:}
+
+\vspace{0.1 cm}
 \begin{description}
 \item[disk load:] 21 minutes to read from Numpy; 22 minutes to read from a ROOT file \textcolor{gray}{(in ``MakeClass mode'')},
-\item[CPU execution:] 13 seconds to apply a simple operation \mbox{\textcolor{gray}{(``for'' loop with {\tt -O3}, AWS ``t2.medium'' 2.4 GHz)},\hspace{-1 cm}}
+\item[CPU execution:] 70 (13) seconds to apply a simple operation \textcolor{gray}{(``for'' loop with {\tt -O0} ({\tt -O3}), AWS ``t2.medium'' 2.4 GHz)},
 \item[GPU execution:] 12.8 seconds to copy over and 5.1 seconds to perform the same operation \mbox{\textcolor{gray}{(GeForce GTX 660M)}.\hspace{-1 cm}}
 \end{description}
+
+\vspace{0.1 cm}
+\textcolor{gray}{(Probably close to ``theoretical optimum,'' before distributed processing. Multi-user cache would be very important!)}
 \end{uncoverenv}
 \end{frame}
+
 
 \begin{frame}{}
 \begin{center}
@@ -262,6 +266,29 @@ Need to invent a query language: \textcolor{darkblue}{Femtocode}.
 \end{center}
 \end{frame}
 
+\begin{frame}[fragile]{Nested query in C++}
+\vspace{0.25 cm}
+\begin{center}
+\begin{minipage}{0.95\linewidth}
+\textcolor{darkblue}{``Momentum of the track with $|\eta|$ $<$ 2.4 that has the most hits.''}
+\end{minipage}
+\end{center}
+\small
+\begin{minted}{c++}
+Track *best = NULL;
+for (int i = 0;  i < tracks.size();  i++) {
+  if (fabs(tracks[i]->eta) < 2.4)
+    if (best == NULL ||
+        tracks[i]->hits.size() > best->hits.size())
+      best = tracks[i];
+}
+if (best != NULL)
+  return best->pt;
+else
+  return 0.0;
+\end{minted}
+\end{frame}
+
 \begin{frame}[fragile]{Nested query in SQL}
 \vspace{0.25 cm}
 \begin{center}
@@ -289,29 +316,6 @@ WHERE
 \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]{Nested query in C++}
-\vspace{0.25 cm}
-\begin{center}
-\begin{minipage}{0.95\linewidth}
-\textcolor{darkblue}{``Momentum of the track with $|\eta|$ $<$ 2.4 that has the most hits.''}
-\end{minipage}
-\end{center}
-\small
-\begin{minted}{c++}
-Track *best = NULL;
-for (int i = 0;  i < tracks.size();  i++) {
-  if (fabs(tracks[i]->eta) < 2.4)
-    if (best == NULL ||
-        tracks[i]->hits.size() < best->hits.size())
-      best = tracks[i];
-}
-if (best != NULL)
-  return best->pt;
-else
-  return 0.0;
-\end{minted}
-\end{frame}
-
 \begin{frame}[fragile]{Nested query in Femtocode}
 \vspace{0.25 cm}
 \begin{center}
@@ -321,21 +325,21 @@ else
 \end{center}
 \small
 \begin{onlyenv}<1>
-\begin{minted}{scala}
-event.tracks
-     .filter(t => abs(t.eta) < 2.4)
-     .maxBy(t => t.hits.size)
-     .map(t => t.pt)
-     .impute(0.0)
+\begin{minted}{bash}
+tracks.filter(t => abs(t.eta) < 2.4)   # drop tracks
+      .maxBy(t => t.hits.size)   # pick one (if any)
+      .map(t => t.pt)            # transform it
+      .impute(0.0)               # replace "None"
+                                 # with a value
 \end{minted}
 \end{onlyenv}
 \begin{onlyenv}<2>
 \begin{minted}{bash}
-event.tracks
-     .filter(abs($1.eta) < 2.4)
-     .maxBy($1.hits.size)
-     .map($1.pt)
-     .impute(0.0)
+tracks.filter(abs($1.eta) < 2.4)       # drop tracks
+      .maxBy($1.hits.size)       # pick one (if any)
+      .map($1.pt)                # transform it
+      .impute(0.0)               # replace "None"
+                                 # with a value
 \end{minted}
 \end{onlyenv}
 \end{frame}
@@ -382,7 +386,7 @@ h = db.dataset("ttbar-MC")
 \end{minted}
 
 \normalsize
-followed by Python analysis with {\small\tt h[\textcolor{darkred}{"hist1"}]}, {\small\tt h[\textcolor{darkred}{"hist2"}]}\ldots
+followed by Python analysis on {\small\tt h[\textcolor{darkred}{"hist1"}]}, {\small\tt h[\textcolor{darkred}{"hist2"}]}\ldots
 \end{uncoverenv}
 \end{frame}
 
@@ -479,6 +483,20 @@ Some arrays would be longer than others.
 \end{enumerate}
 \end{frame}
 
+\begin{frame}{Special functions?}
+\vspace{0.3 cm}
+\textcolor{darkorange}{\bf Maybe.}
+
+\vspace{0.5 cm}
+I'm designing the function libraries to be modular: a server could define new functions (from ROOT, for instance), wrap them in Femtocode's type system, and download them to a physicist's client. \textcolor{gray}{(Probably only primitive types $\to$ primitive types.)}
+
+\vspace{0.5 cm}
+We'd have accept the security risk of physicists running arbitrary code downloaded from a server, because type-checking is unrestricted Python code. Also, if it depends on libraries (like ROOT), the physicist user would have to have those versions of the libraries installed.
+
+\vspace{0.5 cm}
+Some libraries, like GSL, are so well designed that they can be wrapped in bulk.
+\end{frame}
+
 \begin{frame}{Cross-references}
 The Femtocode type system (next page) has no ``pointers,'' no way to make a reference within the event.
 
@@ -522,12 +540,10 @@ fixed-size arrays/matrices have {\tt fewest == most and ordered == True}
 \vspace{0.5 cm}
 The ``number'' type has \textcolor{darkblue}{min} and \textcolor{darkblue}{max} attributes, and these can be open or closed intervals.
 \begin{itemize}
-\item {\tt real(almost(0), 10)} means $\{x | x \in \mathbb{R}\mbox{ and } 0 < x \le 10\}$
-\item {\tt integer(almost(-inf), almost(inf))} means $\mathbb{Z}$
-\item {\tt extended(-inf, inf)} means $\mathbb{R} \cup \{-\infty, \infty\}$
-\item {\tt union(integer, real(0))} means
-
-\hfill $\mathbb{Z} \cup \{x | x \in \mathbb{R}\mbox{ and } x \ge 0\}$
+\item {\tt\small real(almost(0), 10)} \hfill $\{x | x \in \mathbb{R}\mbox{ and } 0 < x \le 10\}$
+\item {\tt\small integer(almost(-inf), almost(inf))} \hfill $\mathbb{Z}$
+\item {\tt\small extended(-inf, inf)} \hfill $\mathbb{R} \cup \{-\infty, \infty\}$
+\item {\tt\small union(integer, real(0))} \hfill $\mathbb{Z} \cup \{x | x \in \mathbb{R}\mbox{ and } x \ge 0\}$
 \end{itemize}
 
 \vfill
@@ -549,8 +565,39 @@ is legal. The error message directs the user to fix their code.
 \end{uncoverenv}
 \end{frame}
 
+\begin{frame}[fragile]{Working examples}
+\vspace{0.2 cm}
+\begin{lstlisting}[language=python]
+>>> propagateTypes("x / y", x=real, y=real)
+\end{lstlisting}
+\color{red}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+femtocode.parser.FemtocodeError: Function "/" does not accept arguments with the given types:
+
+    /(real,
+      real)
+
+    Indeterminate form (0 / 0) is possible; constrain with if-else.
+
+Check line:col 1:0 (pos 0):
+
+    x / y
+----^
+\end{lstlisting}
+
+\begin{uncoverenv}<2->
+\textcolor{darkblue}{Applying a constraint changes the type of ``y'' in the ``if'' clause to {\tt\small union(real(max=almost(0)), real(min=almost(0)))}.}
+\color{black}
+\begin{lstlisting}[language=python]
+>>> propagateTypes("if y != 0: x / y else: None",
+...     x=real, y=real)
+union(null, real)
+\end{lstlisting}
+\end{uncoverenv}
+\end{frame}
+
 \begin{frame}{Type inference}
-\vspace{0.3 cm}
+\vspace{0.2 cm}
 \textcolor{darkorange}{\bf Same example}
 
 If {\tt x} and {\tt y} are {\tt real},
@@ -582,6 +629,54 @@ Inside the {\tt else} clause, {\tt y} can have only one value: {\tt real(0, 0)}.
 \vspace{-0.2 cm}
 The resulting type of the whole expression is {\tt union(null, extended)}. This would raise a type error if the user tried to insert it into a function that doesn't accept {\tt None}, or {\tt inf} (e.g.\ {\tt sin} and {\tt cos}), or negative values (e.g.\ {\tt sqrt}).
 \end{uncoverenv}
+\end{frame}
+
+\begin{frame}[fragile]{Working examples}
+\vspace{0.5 cm}
+\begin{onlyenv}<1>
+\textcolor{darkblue}{``if'', ``and'', ``or'', and ``not'' propagate constraints.}
+\begin{lstlisting}[language=python]
+>>> propagateTypes("x == 5 and y == 6 and x == y",
+... x=real, y=real)
+\end{lstlisting}
+\color{red}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+femtocode.parser.FemtocodeError: Function "==" does not accept arguments with the given types:
+
+    ==(integer(min=5, max=5),
+       integer(min=6, max=6))
+
+    The argument types have no overlap (values can never be equal).
+
+Check line:col 1:27 (pos 27):
+
+    x == 5 and y == 6 and x == y
+-------------------------------^
+\end{lstlisting}
+\end{onlyenv}
+\begin{onlyenv}<2->
+\textcolor{darkblue}{Order does not matter.}
+\begin{lstlisting}[language=python]
+>>> propagateTypes("x == y and x == 5 and y == 6",
+... x=real, y=real)
+\end{lstlisting}
+\color{red}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+femtocode.parser.FemtocodeError: Function "==" does not accept arguments with the given types:
+
+    ==(integer(min=5, max=5),
+       integer(min=6, max=6))
+
+    The argument types have no overlap (values can never be equal).
+
+Check line:col 1:5 (pos 5):
+
+    x == y and x == 5 and y == 6
+---------^
+\end{lstlisting}
+\end{onlyenv}
+
+\uncover<3->{\textcolor{gray}{(It's a short step from here to simplifying the algebra with SymPy.)}}
 \end{frame}
 
 \begin{frame}{Logical inference}
