@@ -126,7 +126,7 @@ Business intelligence has traditionally been interactive; there's a race to prov
 \textcolor{blue}{Ibis, Impala, Kudu, Drill, \ldots}
 \end{center}
 
-all aim to yield sub-second results from terabytes or petabytes of data. (And Google claims to have had it, in-house, for ten years: see \href{http://research.google.com/pubs/pub36632.html}{\textcolor{blue}{Dremel paper}}.)
+all aim to yield sub-second results from terabytes or petabytes of data.
 
 \vfill
 \textcolor{darkorange}{\bf Shouldn't we?}
@@ -184,13 +184,13 @@ all aim to yield sub-second results from terabytes or petabytes of data. (And Go
 
 \vspace{0.1 cm}
 \begin{description}
-\item[disk load:] 21 minutes to read from Numpy; 22 minutes to read from a ROOT file \textcolor{gray}{(in ``MakeClass mode'')},
-\item[CPU execution:] 70 (13) seconds to apply a simple operation \textcolor{gray}{(``for'' loop with {\tt -O0} ({\tt -O3}), AWS ``t2.medium'' 2.4 GHz)},
-\item[GPU execution:] 12.8 seconds to copy over and 5.1 seconds to perform the same operation \mbox{\textcolor{gray}{(GeForce GTX 660M)}.\hspace{-1 cm}}
+\item[disk load:] \textcolor{red}{21 minutes} to read from Numpy; \textcolor{red}{22 minutes} to read from a ROOT file \textcolor{gray}{(in ``MakeClass mode'')},
+\item[CPU execution:] \textcolor{red}{70} (\textcolor{red}{13}) seconds to apply a simple operation \textcolor{gray}{(``for'' loop with {\tt -O0} ({\tt -O3}), AWS ``t2.medium'' 2.4 GHz)},
+\item[GPU execution:] \textcolor{red}{12.8} seconds to copy over and \textcolor{red}{5.1} seconds to perform the same operation \mbox{\textcolor{gray}{(GeForce GTX 660M)}.\hspace{-1 cm}}
 \end{description}
 
 \vspace{0.1 cm}
-\textcolor{gray}{(Probably close to ``theoretical optimum,'' before distributed processing. Multi-user cache would be very important!)}
+Distributed processing divides these times by $N$. Multi-user cache reduces (20 minutes$/N$) $\to$ (13 seconds$/N$).
 \end{uncoverenv}
 \end{frame}
 
@@ -243,27 +243,6 @@ Physics analysis with flat ntuples is within their ``95\%,'' but something like 
 
 \vfill
 Restricting to flat ntuple analysis would require more skims. Spark solves the bookkeeping aspects, but not the fundamental problem.
-\end{frame}
-
-\begin{frame}{We need expressiveness {\it and} optimizability}
-\vspace{0.5 cm}
-\begin{center}
-\begin{minipage}{0.9\linewidth}
-To replace GRID jobs with declarative queries, the query \mbox{language} must be
-\begin{itemize}
-\item \textcolor{darkblue}{\it more expressive} than SQL and TTreeFormula,
-\item \textcolor{darkblue}{\it less expressive} than code (to permit optimizations and subexpression caching, like Spark's DataFrames).
-\end{itemize}
-
-\vspace{0.5 cm}
-Nothing exists to fill this gap.
-
-\textcolor{gray}{(For most of this year, I've been looking.)}
-
-\vspace{0.5 cm}
-Need to invent a query language: \textcolor{darkblue}{Femtocode}.
-\end{minipage}
-\end{center}
 \end{frame}
 
 \begin{frame}[fragile]{Nested query in C++}
@@ -342,6 +321,25 @@ tracks.filter(abs($1.eta) < 2.4)       # drop tracks
                                  # with a value
 \end{minted}
 \end{onlyenv}
+\end{frame}
+
+\begin{frame}{We need expressiveness {\it and} optimizability}
+\vspace{0.5 cm}
+\begin{center}
+\begin{minipage}{0.9\linewidth}
+To replace GRID jobs with declarative queries, the query \mbox{language} must be
+\begin{itemize}
+\item \textcolor{darkblue}{\it more expressive} than SQL and TTreeFormula,
+\item \textcolor{darkblue}{\it less expressive} than code (to permit optimizations and subexpression caching, like Spark's DataFrames).
+\end{itemize}
+
+\vspace{0.5 cm}
+Nothing exists to fill this gap. \textcolor{gray}{(I've been looking.)}
+
+\vspace{0.5 cm}
+Need to invent a query language: \textcolor{darkblue}{Femtocode}.
+\end{minipage}
+\end{center}
 \end{frame}
 
 \begin{frame}{Features of Femtocode}
@@ -491,7 +489,7 @@ Some arrays would be longer than others.
 I'm designing the function libraries to be modular: a server could define new functions (from ROOT, for instance), wrap them in Femtocode's type system, and download them to a physicist's client. \textcolor{gray}{(Probably only primitive types $\to$ primitive types.)}
 
 \vspace{0.5 cm}
-We'd have accept the security risk of physicists running arbitrary code downloaded from a server, because type-checking is unrestricted Python code. Also, if it depends on libraries (like ROOT), the physicist user would have to have those versions of the libraries installed.
+We'd have accept the security risk of physicists running arbitrary code downloaded from a server, because type-checking is unrestricted Python code. \textcolor{gray}{(Maybe limit extension functions so that it can be declarative?)} Also, if it depends on libraries (like ROOT), the physicist user would have to have those versions of the libraries installed.
 
 \vspace{0.5 cm}
 Some libraries, like GSL, are so well designed that they can be wrapped in bulk.
@@ -586,7 +584,6 @@ Check line:col 1:0 (pos 0):
 \end{lstlisting}
 
 \begin{uncoverenv}<2->
-\textcolor{darkblue}{Applying a constraint changes the type of ``y'' in the ``if'' clause to {\tt\small union(real(max=almost(0)), real(min=almost(0)))}.}
 \color{black}
 \begin{lstlisting}[language=python]
 >>> propagateTypes("if y != 0: x / y else: None",
@@ -597,7 +594,7 @@ union(null, real)
 \end{frame}
 
 \begin{frame}{Type inference}
-\vspace{0.2 cm}
+\vspace{0.3 cm}
 \textcolor{darkorange}{\bf Same example}
 
 If {\tt x} and {\tt y} are {\tt real},
@@ -627,7 +624,7 @@ Inside the {\tt else} clause, {\tt y} can have only one value: {\tt real(0, 0)}.
 
 \begin{uncoverenv}<5->
 \vspace{-0.2 cm}
-The resulting type of the whole expression is {\tt union(null, extended)}. This would raise a type error if the user tried to insert it into a function that doesn't accept {\tt None}, or {\tt inf} (e.g.\ {\tt sin} and {\tt cos}), or negative values (e.g.\ {\tt sqrt}).
+The resulting type of the whole expression is {\tt union(null, real)}. This would raise a type error if the user tried to insert it into a function that doesn't accept {\tt None} or negative values.
 \end{uncoverenv}
 \end{frame}
 
@@ -859,6 +856,22 @@ string"""}
 {\small\tt if something \{doIfTrue()\} else \{doIfFalse()\}}
 \end{itemize}
 \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Working examples}
+\vspace{0.3 cm}
+\begin{lstlisting}[language=python]
+>>> from femtocode.parser import parse
+>>> print ast.dump(parse("""
+... tracks.filter(abs($1.eta) < 2.4)
+...       .maxBy($1.hits.size)
+...       .map($1.pt)
+...       .impute(0.0)
+... """))
+\end{lstlisting}
+\begin{lstlisting}[language=python,basicstyle=\ttfamily\scriptsize]
+Suite(assignments=[], expression=FcnCall(function=Attribute(value=FcnCall(function=Attribute(value=FcnCall(function=Attribute(value=FcnCall(function=Attribute(value=Name(id='tracks', ctx=Load()), attr='filter', ctx=Load()), positional=[Compare(left=FcnCall(function=Name(id='abs', ctx=Load()), positional=[Attribute(value=AtArg(num=1), attr='eta', ctx=Load())], names=[], named=[]), ops=[Lt()], comparators=[Num(n=2.4)])], names=[], named=[]), attr='maxBy', ctx=Load()), positional=[Attribute(value=Attribute(value=AtArg(num=1), attr='hits', ctx=Load()), attr='size', ctx=Load())], names=[], named=[]), attr='map', ctx=Load()), positional=[Attribute(value=AtArg(num=1), attr='pt', ctx=Load())], names=[], named=[]), attr='impute', ctx=Load()), positional=[Num(n=0.0)], names=[], named=[]))
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}{Syntax summary}
@@ -1145,6 +1158,88 @@ which translates into:
 \end{enumerate}
 \end{frame}
 
+\begin{frame}[fragile]{Working examples}
+\begin{onlyenv}<1>
+\begin{lstlisting}[language=python]
+>>> viewAsTree("""
+... a = x + y;
+... b = a + y + z;
+... xs.map(x => x + a + a + b).map(y => y + 2)""",
+... xs=collection(real), x=real, y=real, z=real)
+\end{lstlisting}
+\end{onlyenv}
+\begin{onlyenv}<2>
+\begin{lstlisting}[language=python]
+>>> viewAsStatements("""
+... a = x + y;
+... b = a + y + z;
+... xs.map(x => x + a + a + b).map(y => y + 2)""",
+... xs=collection(real), x=real, y=real, z=real)
+\end{lstlisting}
+\end{onlyenv}
+
+\vspace{-0.5 cm}
+\begin{minipage}[t][12cm][t]{\textwidth}
+\begin{onlyenv}<1>
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+Call BuiltinFunction[".map"] has type collection(real)
+    Call BuiltinFunction[".map"] has type collection(real)
+        Ref xs (frame None) has type collection(real)
+        UserFunction has type real
+            Call BuiltinFunction["+"] has type real
+                Call BuiltinFunction["+"] has type real
+                    Call BuiltinFunction["+"] has type real
+                        Ref x (frame 2) has type real
+                        Call BuiltinFunction["+"] has type real
+                            Ref x (frame None) has type real
+                            Ref y (frame None) has type real
+                    Call BuiltinFunction["+"] has type real
+                        Ref x (frame None) has type real
+                        Ref y (frame None) has type real
+                Call BuiltinFunction["+"] has type real
+                    Call BuiltinFunction["+"] has type real
+                        Call BuiltinFunction["+"] has type real
+                            Ref x (frame None) has type real
+                            Ref y (frame None) has type real
+                        Ref y (frame None) has type real
+                    Ref z (frame None) has type real
+    UserFunction has type real
+        Call BuiltinFunction["+"] has type real
+            Ref y (frame 3) has type real
+            Literal 2 has type integer(min=2, max=2)
+\end{lstlisting}
+\vspace{-6 cm}
+\mbox{ } \hfill Notice that ``a'' and
+
+\mbox{ } \hfill ``b'' do not appear.
+
+\vspace{6 cm}
+\end{onlyenv}
+\begin{onlyenv}<2>
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+tmp_0 := (+ x y)
+tmp_1 := (+ xs tmp_0)
+tmp_2 := (+ tmp_1 tmp_0)
+tmp_3 := (+ tmp_0 y)
+tmp_4 := (+ tmp_3 z)
+tmp_5 := (+ tmp_2 tmp_4)
+tmp_6 := (+ tmp_5 2)
+\end{lstlisting}
+\vspace{-3 cm}
+\normalsize
+\mbox{ } \hfill Repeated calculations
+
+\mbox{ } \hfill have been rolled into
+
+\mbox{ } \hfill {\tt\small tmp\_*} for execution.
+
+\vspace{2 cm}
+
+This statement-generation would be even better if it minimized the length of time variables need to stay alive, while maintaining dependency order, so that arrays can be overwritten in-place.
+\end{onlyenv}
+\end{minipage}
+\end{frame}
+
 \begin{frame}{}
 \begin{center}
 \textcolor{darkblue}{\huge Execution}
@@ -1202,13 +1297,19 @@ For all conceivable backends, data will be stored in columnar arrays, probably u
 \end{columns}
 
 \vspace{0.5 cm}
-I've gone back and forth on this, but now I see that Parquet's definition and repetition levels is the most elegant solution:
-\begin{center}
-\textcolor{blue}{\scriptsize\url{https://blog.twitter.com/2013/dremel-made-simple-with-parquet}}
-\end{center}
+Drawing inspiration from ROOT and \href{http://research.google.com/pubs/pub36632.html}{\textcolor{blue}{Google Dremel}}/\href{https://blog.twitter.com/2013/dremel-made-simple-with-parquet}{\textcolor{blue}{Apache Parquet}}, but neither is ideal (as file formats, they focus on packing, rather than in-column execution).
 
-\vspace{0.5 cm}
-Each group of columns with the same multiplicity would have one ``repetition level'' array that indicates where collections and subcollections start and end. Only one repetition level array is needed for arbitrarily deep nesting: deeper repetition levels lead to higher integer values in the repetition level array. In principle, subcollections-within-collections could be as deep as $2^{64}$.
+\vspace{0.3 cm}
+\textcolor{darkblue}{Current idea:} split nested lists into a flat ``data'' array and depth-first recursive ``sizes'' array:
+
+\vspace{0.3 cm}
+\mbox{\hspace{-0.75 cm}\begin{minipage}{1.2\linewidth}
+\begin{description}
+\item[Input:] {\tt\small [[], [[], [1.1]], [[2.2], [], [3.3]], [], [[], [4.4, 5.5], []], []]}
+\item[Data:] {\tt\small [1.1, 2.2, 3.3, 4.4, 5.5]}
+\item[Sizes:] {\tt\small [0, 2, 0, 1, 3, 1, 0, 1, 0, 3, 0, 2, 0, 0]}
+\end{description}
+\end{minipage}}
 \end{frame}
 
 \begin{frame}{Status}
