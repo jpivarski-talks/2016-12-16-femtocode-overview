@@ -1217,29 +1217,27 @@ Call BuiltinFunction[".map"] has type collection(real)
 \end{onlyenv}
 \begin{onlyenv}<2>
 \begin{lstlisting}[basicstyle=\ttfamily\small]
-@tmp0[1] := (+ x[1] y[1])
-@tmp1[2] := (+ xs[2] @tmp0[1])
-@tmp2[2] := (+ @tmp1[2] @tmp0[1])
-@tmp3[1] := (+ @tmp0[1] y[1])
-@tmp4[1] := (+ @tmp3[1] z[1])
-@tmp5[2] := (+ @tmp2[2] @tmp4[1])
-@tmp6[2] := (+ @tmp5[2] 2[0])
--> @tmp6[1]
+@0[L1] := (+ x[L1] y[L1])
+@1[L2] := (+ xs[L2] @0[L1])
+@2[L2] := (+ @1[L2] @0[L1])
+@3[L1] := (+ @0[L1] y[L1])
+@4[L1] := (+ @3[L1] z[L1])
+@5[L2] := (+ @2[L2] @4[L1])
+@6[L2] := (+ @5[L2] 2[L0])
+--> @6[L1]
 \end{lstlisting}
 \vspace{-3.4 cm}
 \normalsize
-\mbox{ } \hfill Repeated calculations
+\mbox{ } \hfill Repeated calculations have
 
-\mbox{ } \hfill have been rolled into
+\mbox{ } \hfill been rolled into tmp vars.
 
-\mbox{ } \hfill {\tt\small @tmp\_*} for execution.
-
-\vspace{1.3 cm}
+\vspace{0.3 cm}
 \mbox{ } \hfill Number in brackets is the
 
 \mbox{ } \hfill {\it level} for array alignment.
 
-\vspace{0.3 cm}
+\vspace{1.3 cm}
 \textcolor{gray}{(This statement-generation would be even better if it minimized the length of time variables need to stay alive, while maintaining dependency order, so that arrays can be overwritten in-place.)}
 \end{onlyenv}
 \end{minipage}
